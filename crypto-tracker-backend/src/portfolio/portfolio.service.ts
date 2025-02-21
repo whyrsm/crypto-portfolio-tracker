@@ -9,7 +9,7 @@ interface AssetBalance {
 }
 
 interface BalanceData {
-  [currency: string]: AssetBalance;
+  [asset_name: string]: AssetBalance;
 }
 
 interface PortfolioBalance {
@@ -40,7 +40,7 @@ export class PortfolioService {
       secret: bitgetCredentials.apiSecret,
       password: bitgetCredentials.password
     });
-    
+
     this.hyperliquidUserAddress = this.configService.getHyperLiquidCredentials().userAddress;
     this.hyperliquidClient = new ccxt.hyperliquid();
   }
@@ -69,12 +69,12 @@ export class PortfolioService {
       // Return separate balances for each account with USD and IDR values
       return Promise.all(balances.map(async balance => {
         const filteredBalance = {};
-        for (const [currency, amount] of Object.entries(balance.total)) {
+        for (const [asset_name, amount] of Object.entries(balance.total)) {
           if (amount > 0) {
-            const usdPrice = await this.fetchUSDPrice(currency);
+            const usdPrice = await this.fetchUSDPrice(asset_name);
             const usdValue = amount * usdPrice;
-            
-            filteredBalance[currency] = {
+
+            filteredBalance[asset_name] = {
               amount,
               usd_value: usdValue
               // TODO: Add IDR value conversion
@@ -91,14 +91,14 @@ export class PortfolioService {
   async getBitgetBalance() {
     try {
       const balance = await this.bitgetClient.fetchBalance();
-      
+
       const filteredBalance = {};
-      for (const [currency, amount] of Object.entries(balance.total)) {
+      for (const [asset_name, amount] of Object.entries(balance.total)) {
         if (amount > 0) {
-          const usdPrice = await this.fetchUSDPrice(currency);
+          const usdPrice = await this.fetchUSDPrice(asset_name);
           const usdValue = amount * usdPrice;
-          
-          filteredBalance[currency] = {
+
+          filteredBalance[asset_name] = {
             amount,
             usd_value: usdValue
             // TODO: Add IDR value conversion
@@ -114,18 +114,18 @@ export class PortfolioService {
   async getHyperliquidBalance() {
     try {
       const balance = await this.hyperliquidClient.fetchBalance({
-          user: this.hyperliquidUserAddress,
-          type: 'spot'
+        user: this.hyperliquidUserAddress,
+        type: 'spot'
       });
-      
+
       const filteredBalance = {};
-      
-      for (const [currency, amount] of Object.entries(balance.total)) {
+
+      for (const [asset_name, amount] of Object.entries(balance.total)) {
         if (amount > 0) {
-          const usdPrice = await this.fetchUSDPrice(currency);
+          const usdPrice = await this.fetchUSDPrice(asset_name);
           const usdValue = amount * usdPrice;
-          
-          filteredBalance[currency] = {
+
+          filteredBalance[asset_name] = {
             amount,
             usd_value: usdValue
             // TODO: Add IDR value conversion
@@ -138,64 +138,140 @@ export class PortfolioService {
     }
   }
 
-  async getPortfolioSnapshot() {
+  async getPortfolioSnapshot(date?: string) {
+    try {
+      // Check if today's snapshot exists in DB
+      const currentDate = date ? date : this.databaseService.getCurrentDate();
+      const latestSnapshotDate = await this.databaseService.getLatestSnapshotDate();
+
+      console.log(latestSnapshotDate, currentDate)
+
+      // If snapshot exists for today, return from DB
+      if (latestSnapshotDate === currentDate) {
+        console.log('Get data from database')
+        const data = await this.databaseService.getSnapshot(date);
+        return this.formatSnapshot(data);
+      }
+
+      console.log('Get data from API')
+
+      const balances = await this.fetchAllBalances();
+      const snapshot = this.createBalanceSnapshot(balances);
+      const summary = this.calculatePortfolioSummary(snapshot);
+
+      const result = {
+        summary,
+        balances: snapshot
+      };
+
+      await this.databaseService.savePortfolioSnapshot(result);
+      return result;
+    } catch (error) {
+      throw new Error(`Failed to get portfolio snapshot: ${error.message}`);
+    }
+  }
+
+  private async fetchAllBalances() {
     const [binanceBalances, bitgetBalances, hyperliquidBalances] = await Promise.all([
       this.getBinanceBalances(),
       this.getBitgetBalance(),
       this.getHyperliquidBalance(),
     ]);
+    return { binanceBalances, bitgetBalances, hyperliquidBalances };
+  }
 
-    const snapshot = {
+  private createBalanceSnapshot(balances: any) {
+    const { binanceBalances, bitgetBalances, hyperliquidBalances } = balances;
+    return {
       binance_1: binanceBalances[0],
       binance_2: binanceBalances[1],
       bitget: bitgetBalances,
       hyperliquid: hyperliquidBalances
     };
+  }
 
-    // Calculate summary
+  private calculatePortfolioSummary(snapshot: any) {
     const summary = {
       total_usd_value: 0,
       assets: {}
     };
 
-    // Process all balances
     const allBalances: PortfolioBalance[] = [
-      { source: 'binance_1', data: binanceBalances[0] },
-      { source: 'binance_2', data: binanceBalances[1] },
-      { source: 'bitget', data: bitgetBalances },
-      { source: 'hyperliquid', data: hyperliquidBalances }
+      { source: 'binance_1', data: snapshot.binance_1 },
+      { source: 'binance_2', data: snapshot.binance_2 },
+      { source: 'bitget', data: snapshot.bitget },
+      { source: 'hyperliquid', data: snapshot.hyperliquid }
     ];
 
     for (const balance of allBalances) {
-      for (const [currency, data] of Object.entries(balance.data)) {
-        // Add to total USD value
+      for (const [asset_name, data] of Object.entries(balance.data)) {
         summary.total_usd_value += data.usd_value;
 
-        // Aggregate asset amounts
-        if (!summary.assets[currency]) {
-          summary.assets[currency] = {
+        if (!summary.assets[asset_name]) {
+          summary.assets[asset_name] = {
             total_amount: 0,
             total_usd_value: 0,
             holdings: {}
           };
         }
-        summary.assets[currency].total_amount += data.amount;
-        summary.assets[currency].total_usd_value += data.usd_value;
-        summary.assets[currency].holdings[balance.source] = {
+        summary.assets[asset_name].total_amount += data.amount;
+        summary.assets[asset_name].total_usd_value += data.usd_value;
+        summary.assets[asset_name].holdings[balance.source] = {
           amount: data.amount,
           usd_value: data.usd_value
         };
       }
     }
 
-    const result = {
+    return summary;
+  }
+
+  private formatSnapshot(data: any[]) {
+    const snapshot = {
+      binance_1: {},
+      binance_2: {},
+      bitget: {},
+      hyperliquid: {}
+    };
+
+    const summary = {
+      total_usd_value: 0,
+      assets: {}
+    };
+
+    if (Array.isArray(data)) {
+      for (const record of data) {
+        const { exchange_name, asset_name, amount, usd_value } = record;
+
+        if (snapshot[exchange_name]) {
+          snapshot[exchange_name][asset_name] = {
+            amount,
+            usd_value
+          };
+        }
+
+        summary.total_usd_value += usd_value;
+
+        if (!summary.assets[asset_name]) {
+          summary.assets[asset_name] = {
+            total_amount: 0,
+            total_usd_value: 0,
+            holdings: {}
+          };
+        }
+
+        summary.assets[asset_name].total_amount += amount;
+        summary.assets[asset_name].total_usd_value += usd_value;
+        summary.assets[asset_name].holdings[exchange_name] = {
+          amount,
+          usd_value
+        };
+      }
+    }
+
+    return {
       summary,
       balances: snapshot
     };
-
-    // Save the snapshot to the database
-    await this.databaseService.savePortfolioSnapshot(result);
-
-    return result;
   }
 }
