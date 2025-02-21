@@ -67,32 +67,7 @@ The backend service is built with NestJS and provides:
 
 ## API Documentation
 
-### Portfolio Endpoints
-
-#### Get Portfolio Snapshot
-
-```
-GET /portfolio/snapshot
-```
-
-Returns the current portfolio balance across all configured exchanges.
-
-Response format:
-```json
-{
-  "binance_1": {
-    "BTC": 0.5,
-    "ETH": 2.0
-  },
-  "binance_2": {
-    "USDT": 1000
-  },
-  "bitget": {
-    "BTC": 0.1,
-    "USDT": 500
-  }
-}
-```
+(Will be added)
 
 ## Development
 
