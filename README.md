@@ -7,27 +7,22 @@ A comprehensive application to monitor cryptocurrency portfolios across multiple
 The Crypto Portfolio Tracker is built with a modern tech stack:
 
 - **Backend**: NestJS (Node.js framework)
+- **Database**: Supabase (PostgreSQL)
 - **Frontend**: (To be implemented)
 - **Supported Exchanges**: 
-  - Binance
+  - Binance (Multiple accounts)
   - Bitget
   - Hyperliquid
   - More exchanges to be added
 
-## Architecture
+## Features
 
-### Backend Service
-
-The backend service is built with NestJS and provides:
-
-- RESTful API endpoints for portfolio data
-- Integration with multiple cryptocurrency exchanges
-- Secure API key management
-- Real-time balance tracking
-
-### Frontend Service
-
-(To be implemented)
+- Real-time portfolio tracking across multiple exchanges
+- Daily portfolio snapshots
+- Historical portfolio data
+- USD value conversion for all assets
+- Asset aggregation across exchanges
+- Multiple Binance account support
 
 ## Setup Instructions
 
