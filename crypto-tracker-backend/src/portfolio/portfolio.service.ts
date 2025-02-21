@@ -1,6 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
+import { DatabaseService } from '../database/database.service';
 import * as ccxt from 'ccxt';
+
+interface AssetBalance {
+  amount: number;
+  usd_value: number;
+}
+
+interface BalanceData {
+  [currency: string]: AssetBalance;
+}
+
+interface PortfolioBalance {
+  source: string;
+  data: BalanceData;
+}
 
 @Injectable()
 export class PortfolioService {
@@ -9,7 +24,10 @@ export class PortfolioService {
   private hyperliquidClient: ccxt.Exchange;
   private hyperliquidUserAddress: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly databaseService: DatabaseService
+  ) {
     const binanceCredentials = this.configService.getBinanceCredentials();
     this.binanceClients = binanceCredentials.map(cred => new ccxt.binance({
       apiKey: cred.apiKey,
@@ -127,11 +145,57 @@ export class PortfolioService {
       this.getHyperliquidBalance(),
     ]);
 
-    return {
+    const snapshot = {
       binance_1: binanceBalances[0],
       binance_2: binanceBalances[1],
       bitget: bitgetBalances,
       hyperliquid: hyperliquidBalances
     };
+
+    // Calculate summary
+    const summary = {
+      total_usd_value: 0,
+      assets: {}
+    };
+
+    // Process all balances
+    const allBalances: PortfolioBalance[] = [
+      { source: 'binance_1', data: binanceBalances[0] },
+      { source: 'binance_2', data: binanceBalances[1] },
+      { source: 'bitget', data: bitgetBalances },
+      { source: 'hyperliquid', data: hyperliquidBalances }
+    ];
+
+    for (const balance of allBalances) {
+      for (const [currency, data] of Object.entries(balance.data)) {
+        // Add to total USD value
+        summary.total_usd_value += data.usd_value;
+
+        // Aggregate asset amounts
+        if (!summary.assets[currency]) {
+          summary.assets[currency] = {
+            total_amount: 0,
+            total_usd_value: 0,
+            holdings: {}
+          };
+        }
+        summary.assets[currency].total_amount += data.amount;
+        summary.assets[currency].total_usd_value += data.usd_value;
+        summary.assets[currency].holdings[balance.source] = {
+          amount: data.amount,
+          usd_value: data.usd_value
+        };
+      }
+    }
+
+    const result = {
+      summary,
+      balances: snapshot
+    };
+
+    // Save the snapshot to the database
+    await this.databaseService.savePortfolioSnapshot(result);
+
+    return result;
   }
 }

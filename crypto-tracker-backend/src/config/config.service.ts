@@ -13,7 +13,9 @@ export class ConfigService {
       BITGET_API_KEY: process.env.BITGET_API_KEY || '',
       BITGET_SECRET_KEY: process.env.BITGET_SECRET_KEY || '',
       BITGET_PASSWORD: process.env.BITGET_PASSWORD || '',
-      HYPERLIQUID_USER_ADDRESS: process.env.HYPERLIQUID_USER_ADDRESS || ''
+      HYPERLIQUID_USER_ADDRESS: process.env.HYPERLIQUID_USER_ADDRESS || '',
+      SUPABASE_URL: process.env.SUPABASE_URL || '',
+      SUPABASE_KEY: process.env.SUPABASE_KEY || ''
     };
   }
 
