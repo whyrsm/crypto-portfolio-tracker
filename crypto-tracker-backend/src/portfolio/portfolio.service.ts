@@ -22,22 +22,44 @@ export class PortfolioService {
     });
   }
 
+  private async fetchUSDPrice(symbol: string): Promise<number> {
+    try {
+      if (symbol === 'USD' || symbol === 'USDT' || symbol === 'USDC') return 1;
+      const ticker = await this.binanceClients[0].fetchTicker(`${symbol}/USDT`);
+      return ticker.last;
+    } catch (error) {
+      console.warn(`Failed to fetch USD price for ${symbol}: ${error.message}`);
+      return 0;
+    }
+  }
+
+  // TODO: Implement USD to IDR conversion using a forex API
+  private async getUSDToIDR(): Promise<number> {
+    return 1; // Temporarily return 1 as we're focusing on USD values first
+  }
+
   async getBinanceBalances() {
     try {
       const balances = await Promise.all(
         this.binanceClients.map(client => client.fetchBalance())
       );
-      
-      // Return separate balances for each account
-      return balances.map(balance => {
+      // Return separate balances for each account with USD and IDR values
+      return Promise.all(balances.map(async balance => {
         const filteredBalance = {};
-        Object.entries(balance.total).forEach(([currency, amount]) => {
+        for (const [currency, amount] of Object.entries(balance.total)) {
           if (amount > 0) {
-            filteredBalance[currency] = amount;
+            const usdPrice = await this.fetchUSDPrice(currency);
+            const usdValue = amount * usdPrice;
+            
+            filteredBalance[currency] = {
+              amount,
+              usd_value: usdValue
+              // TODO: Add IDR value conversion
+            };
           }
-        });
+        }
         return filteredBalance;
-      });
+      }));
     } catch (error) {
       throw new Error(`Failed to fetch Binance balances: ${error.message}`);
     }
@@ -46,7 +68,22 @@ export class PortfolioService {
   async getBitgetBalance() {
     try {
       const balance = await this.bitgetClient.fetchBalance();
-      return balance.total;
+      const usdToIdr = await this.getUSDToIDR();
+      
+      const filteredBalance = {};
+      for (const [currency, amount] of Object.entries(balance.total)) {
+        if (amount > 0) {
+          const usdPrice = await this.fetchUSDPrice(currency);
+          const usdValue = amount * usdPrice;
+          
+          filteredBalance[currency] = {
+            amount,
+            usd_value: usdValue
+            // TODO: Add IDR value conversion
+          };
+        }
+      }
+      return filteredBalance;
     } catch (error) {
       throw new Error(`Failed to fetch Bitget balance: ${error.message}`);
     }
