@@ -6,6 +6,8 @@ import * as ccxt from 'ccxt';
 export class PortfolioService {
   private binanceClients: ccxt.Exchange[];
   private bitgetClient: ccxt.Exchange;
+  private hyperliquidClient: ccxt.Exchange;
+  private hyperliquidUserAddress: string;
 
   constructor(private readonly configService: ConfigService) {
     const binanceCredentials = this.configService.getBinanceCredentials();
@@ -20,12 +22,15 @@ export class PortfolioService {
       secret: bitgetCredentials.apiSecret,
       password: bitgetCredentials.password
     });
+    
+    this.hyperliquidUserAddress = this.configService.getHyperLiquidCredentials().userAddress;
+    this.hyperliquidClient = new ccxt.hyperliquid();
   }
 
   private async fetchUSDPrice(symbol: string): Promise<number> {
     try {
       if (symbol === 'USD' || symbol === 'USDT' || symbol === 'USDC') return 1;
-      const ticker = await this.binanceClients[0].fetchTicker(`${symbol}/USDT`);
+      const ticker = await this.bitgetClient.fetchTicker(`${symbol}/USDT`);
       return ticker.last;
     } catch (error) {
       console.warn(`Failed to fetch USD price for ${symbol}: ${error.message}`);
@@ -68,7 +73,6 @@ export class PortfolioService {
   async getBitgetBalance() {
     try {
       const balance = await this.bitgetClient.fetchBalance();
-      const usdToIdr = await this.getUSDToIDR();
       
       const filteredBalance = {};
       for (const [currency, amount] of Object.entries(balance.total)) {
@@ -89,17 +93,45 @@ export class PortfolioService {
     }
   }
 
+  async getHyperliquidBalance() {
+    try {
+      const balance = await this.hyperliquidClient.fetchBalance({
+          user: this.hyperliquidUserAddress,
+          type: 'spot'
+      });
+      
+      const filteredBalance = {};
+      
+      for (const [currency, amount] of Object.entries(balance.total)) {
+        if (amount > 0) {
+          const usdPrice = await this.fetchUSDPrice(currency);
+          const usdValue = amount * usdPrice;
+          
+          filteredBalance[currency] = {
+            amount,
+            usd_value: usdValue
+            // TODO: Add IDR value conversion
+          };
+        }
+      }
+      return filteredBalance;
+    } catch (error) {
+      throw new Error(`Failed to fetch Hyperliquid balance: ${error.message}`);
+    }
+  }
+
   async getPortfolioSnapshot() {
-    const [binanceBalances, bitgetBalances] = await Promise.all([
+    const [binanceBalances, bitgetBalances, hyperliquidBalances] = await Promise.all([
       this.getBinanceBalances(),
       this.getBitgetBalance(),
+      this.getHyperliquidBalance(),
     ]);
 
     return {
       binance_1: binanceBalances[0],
       binance_2: binanceBalances[1],
       bitget: bitgetBalances,
-      // TODO: Add Hyperliquid integration
+      hyperliquid: hyperliquidBalances
     };
   }
 }

@@ -13,6 +13,7 @@ export class ConfigService {
       BITGET_API_KEY: process.env.BITGET_API_KEY || '',
       BITGET_SECRET_KEY: process.env.BITGET_SECRET_KEY || '',
       BITGET_PASSWORD: process.env.BITGET_PASSWORD || '',
+      HYPERLIQUID_USER_ADDRESS: process.env.HYPERLIQUID_USER_ADDRESS || ''
     };
   }
 
@@ -38,6 +39,12 @@ export class ConfigService {
       apiKey: this.get('BITGET_API_KEY'),
       apiSecret: this.get('BITGET_SECRET_KEY'),
       password: this.get('BITGET_PASSWORD'),
+    };
+  }
+
+  getHyperLiquidCredentials() {
+    return {
+      userAddress: this.get('HYPERLIQUID_USER_ADDRESS'),
     };
   }
 }
