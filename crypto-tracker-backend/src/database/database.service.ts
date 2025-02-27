@@ -35,7 +35,8 @@ export class DatabaseService {
                         asset_name: assetName,
                         exchange_name: exchange,
                         amount: data.amount,
-                        usd_value: data.usd_value
+                        usd_value: data.usd_value,
+                        usd_unit_price: data.usd_unit_price
                     });
                 }
             }

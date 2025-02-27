@@ -48,6 +48,8 @@ export class PortfolioService {
   private async fetchUSDPrice(symbol: string): Promise<number> {
     try {
       if (symbol === 'USD' || symbol === 'USDT' || symbol === 'USDC') return 1;
+      if (symbol === 'UBTC') symbol = 'BTC';
+
       const ticker = await this.bitgetClient.fetchTicker(`${symbol}/USDT`);
       return ticker.last;
     } catch (error) {
@@ -76,7 +78,8 @@ export class PortfolioService {
 
             filteredBalance[asset_name] = {
               amount,
-              usd_value: usdValue
+              usd_value: usdValue,
+              usd_unit_price: usdPrice
               // TODO: Add IDR value conversion
             };
           }
@@ -100,7 +103,8 @@ export class PortfolioService {
 
           filteredBalance[asset_name] = {
             amount,
-            usd_value: usdValue
+            usd_value: usdValue,
+            usd_unit_price: usdPrice
             // TODO: Add IDR value conversion
           };
         }
@@ -120,14 +124,16 @@ export class PortfolioService {
 
       const filteredBalance = {};
 
-      for (const [asset_name, amount] of Object.entries(balance.total)) {
+      for (let [asset_name, amount] of Object.entries(balance.total)) {
+        if (asset_name === 'UBTC') asset_name = 'BTC';
         if (amount > 0) {
           const usdPrice = await this.fetchUSDPrice(asset_name);
           const usdValue = amount * usdPrice;
 
           filteredBalance[asset_name] = {
             amount,
-            usd_value: usdValue
+            usd_value: usdValue,
+            usd_unit_price: usdPrice
             // TODO: Add IDR value conversion
           };
         }
@@ -150,7 +156,7 @@ export class PortfolioService {
       if (latestSnapshotDate === currentDate) {
         console.log('Get data from database')
         const data = await this.databaseService.getSnapshot(date);
-        return this.formatSnapshot(data);
+        return this.formatSnapshot(data, currentDate);
       }
 
       console.log('Get data from API')
@@ -160,6 +166,7 @@ export class PortfolioService {
       const summary = this.calculatePortfolioSummary(snapshot);
 
       const result = {
+        date: currentDate,
         summary,
         balances: snapshot
       };
@@ -226,7 +233,7 @@ export class PortfolioService {
     return summary;
   }
 
-  private formatSnapshot(data: any[]) {
+  private formatSnapshot(data: any[], date: string) {
     const snapshot = {
       binance_1: {},
       binance_2: {},
@@ -270,6 +277,7 @@ export class PortfolioService {
     }
 
     return {
+      date,
       summary,
       balances: snapshot
     };

@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   // Set timezone globally
-  process.env.TZ = 'Asia/Jakarta';
+  process.env.TZ = 'UTC';
 
   const app = await NestFactory.create(AppModule);
   await app.listen(process.env.PORT ?? 3000);
