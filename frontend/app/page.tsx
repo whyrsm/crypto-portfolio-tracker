@@ -15,9 +15,24 @@ async function getPortfolioData() {
 export default async function Home() {
   const portfolioData = await getPortfolioData();
 
+  // Sort assets by total USD value in descending order
+  const sortedAssets = Object.fromEntries(
+    Object.entries(portfolioData.summary.assets)
+      .sort(([, a], [, b]) => b.total_usd_value - a.total_usd_value)
+  );
+
+  // Create a new portfolio data object with sorted assets
+  const sortedPortfolioData: PortfolioData = {
+    ...portfolioData,
+    summary: {
+      ...portfolioData.summary,
+      assets: sortedAssets
+    }
+  };
+
   return (
     <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center">
-      <PortfolioCard data={portfolioData} />
+      <PortfolioCard data={sortedPortfolioData} />
     </div>
   );
 }

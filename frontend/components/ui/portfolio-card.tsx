@@ -60,7 +60,9 @@ export function PortfolioCard({ data }: PortfolioCardProps) {
       </CardHeader>
       <CardContent className="p-4 md:p-6 pt-0">
         <div className="space-y-4 md:space-y-6">
-          {Object.entries(data.summary.assets).map(([asset, assetData]) => (
+          {Object.entries(data.summary.assets)
+            .sort(([, a], [, b]) => b.total_usd_value - a.total_usd_value)
+            .map(([asset, assetData]) => (
             <div key={asset} className="border-b pb-3 md:pb-4 last:border-0">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
@@ -71,9 +73,6 @@ export function PortfolioCard({ data }: PortfolioCardProps) {
                       width={24}
                       height={24}
                       className="rounded-full"
-                      onError={(e) => {
-                        e.currentTarget.src = "https://assets.coingecko.com/coins/images/1/thumb/generic-crypto.png";
-                      }}
                     />
                   </div>
                   <h3 className="text-base md:text-lg font-semibold">{asset}</h3>
