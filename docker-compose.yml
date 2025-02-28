@@ -5,6 +5,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    container_name: nestjs-app
     ports:
       - "3111:3000"
     environment:
@@ -12,7 +13,6 @@ services:
       - PORT=3000
     volumes:
       - ./backend:/app
-      - /app/node_modules
     networks:
       - app-network
 
@@ -20,14 +20,13 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    container_name: nextjs-app
     ports:
       - "3112:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:3111
+      - NEXT_PUBLIC_API_URL=http://backend:3000  # Use internal Docker network
     volumes:
       - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - backend
     networks:
