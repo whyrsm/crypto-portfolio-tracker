@@ -18,7 +18,7 @@ export default async function Home() {
   // Sort assets by total USD value in descending order
   const sortedAssets = Object.fromEntries(
     Object.entries(portfolioData.summary.assets)
-      .sort(([, a], [, b]) => b.total_usd_value - a.total_usd_value)
+      .sort(([, a], [, b]) => (b as { total_usd_value: number }).total_usd_value - (a as { total_usd_value: number }).total_usd_value)
   );
 
   // Create a new portfolio data object with sorted assets
