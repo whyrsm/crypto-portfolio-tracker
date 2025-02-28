@@ -1,4 +1,4 @@
-import { PortfolioCard } from "@/components/ui/portfolio-card";
+import PortfolioCard from "@/components/ui/portfolio-card";
 
 async function getPortfolioData() {
   const res = await fetch('http://localhost:3000/portfolio/snapshot', {
@@ -22,7 +22,7 @@ export default async function Home() {
   );
 
   // Create a new portfolio data object with sorted assets
-  const sortedPortfolioData: PortfolioData = {
+  const sortedPortfolioData = {
     ...portfolioData,
     summary: {
       ...portfolioData.summary,

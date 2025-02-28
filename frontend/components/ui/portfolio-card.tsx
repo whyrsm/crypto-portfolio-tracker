@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface AssetHolding {
   amount: number;
@@ -45,24 +46,45 @@ const getAssetLogo = (symbol: string) => {
   return `/assets/logos/${normalizedSymbol}.svg`;
 };
 
-export function PortfolioCard({ data }: PortfolioCardProps) {
+export default function PortfolioCard({ data }: PortfolioCardProps) {
   const [expandedAssets, setExpandedAssets] = useState<{[key: string]: boolean}>({});
+  const [hideSmallBalances, setHideSmallBalances] = useState(true);
+
+  const filteredAssets = Object.entries(data.summary.assets)
+    .filter(([, assetData]) => !hideSmallBalances || assetData.total_usd_value >= 1)
+    .sort(([, a], [, b]) => b.total_usd_value - a.total_usd_value);
+
   return (
     <Card className="w-full max-w-lg md:max-w-2xl lg:max-w-4xl">
       <CardHeader className="p-4 md:p-6">
-        <CardTitle className="text-xl md:text-2xl">Portfolio Summary</CardTitle>
-        <CardDescription>As of {new Date(data.date).toLocaleDateString()}</CardDescription>
-        <div className="mt-2">
-          <Badge variant="secondary" className="text-base md:text-lg">
-            Total Value: ${data.summary.total_usd_value.toLocaleString()}
-          </Badge>
+        <div className="flex flex-col">
+          <div>
+            <CardTitle className="text-xl md:text-2xl mb-1">Portfolio Summary</CardTitle>
+            <CardDescription>As of {new Date(data.date).toLocaleDateString()}</CardDescription>
+          </div>
+          <div className="mt-6 mb-2">
+            <Badge variant="secondary" className="text-3xl md:text-4xl px-6 py-3 font-semibold">
+              ${data.summary.total_usd_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-4 md:p-6 pt-0">
         <div className="space-y-4 md:space-y-6">
-          {Object.entries(data.summary.assets)
-            .sort(([, a], [, b]) => b.total_usd_value - a.total_usd_value)
-            .map(([asset, assetData]) => (
+          <div className="flex items-center space-x-2 text-muted-foreground text-xs border-b pb-2">
+            <Checkbox
+              id="hideSmallBalances"
+              checked={hideSmallBalances}
+              onCheckedChange={(checked) => setHideSmallBalances(checked as boolean)}
+            />
+            <label
+              htmlFor="hideSmallBalances"
+              className="font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Hide Small Balances
+            </label>
+          </div>
+          {filteredAssets.map(([asset, assetData]) => (
             <div key={asset} className="border-b pb-3 md:pb-4 last:border-0">
               <div className="flex justify-between items-center mb-2">
                 <div className="flex items-center gap-2">
@@ -73,12 +95,16 @@ export function PortfolioCard({ data }: PortfolioCardProps) {
                       width={24}
                       height={24}
                       className="rounded-full"
+                      onError={(e) => {
+                        e.currentTarget.src = "/assets/logos/default.svg";
+                      }}
                     />
                   </div>
                   <h3 className="text-base md:text-lg font-semibold">{asset}</h3>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge>${assetData.total_usd_value.toLocaleString()}</Badge>
+                  <Badge variant="outline" className="text-sm text-muted-foreground">{assetData.total_amount.toLocaleString()} {asset}</Badge>
+                  <Badge className="text-sm">${assetData.total_usd_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}</Badge>
                   <button
                     onClick={() => setExpandedAssets(prev => ({ ...prev, [asset]: !prev[asset] }))}
                     className="p-1 hover:bg-secondary/20 rounded-full transition-colors"
@@ -95,7 +121,7 @@ export function PortfolioCard({ data }: PortfolioCardProps) {
                       {holding.amount.toLocaleString()} {asset}
                     </div>
                     <div className="text-xs md:text-sm">
-                      ${holding.usd_value.toLocaleString()}
+                      ${holding.usd_value.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </div>
                   </div>
                 ))}
