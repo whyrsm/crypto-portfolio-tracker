@@ -200,7 +200,8 @@ export class PortfolioService {
   private calculatePortfolioSummary(snapshot: any) {
     const summary = {
       total_usd_value: 0,
-      assets: {}
+      assets: {},
+      usd_current_prices: {}
     };
 
     const allBalances: PortfolioBalance[] = [
@@ -215,9 +216,11 @@ export class PortfolioService {
         summary.total_usd_value += data.usd_value;
 
         if (!summary.assets[asset_name]) {
+          const currentPrice = this.fetchUSDPrice(asset_name);
           summary.assets[asset_name] = {
             total_amount: 0,
             total_usd_value: 0,
+            usd_current_price: currentPrice,
             holdings: {}
           };
         }
@@ -233,7 +236,7 @@ export class PortfolioService {
     return summary;
   }
 
-  private formatSnapshot(data: any[], date: string) {
+  private async formatSnapshot(data: any[], date: string) {
     const snapshot = {
       binance_1: {},
       binance_2: {},
@@ -243,7 +246,8 @@ export class PortfolioService {
 
     const summary = {
       total_usd_value: 0,
-      assets: {}
+      assets: {},
+      usd_current_prices: {}
     };
 
     if (Array.isArray(data)) {
@@ -260,9 +264,11 @@ export class PortfolioService {
         summary.total_usd_value += usd_value;
 
         if (!summary.assets[asset_name]) {
+          const currentPrice = await this.fetchUSDPrice(asset_name);
           summary.assets[asset_name] = {
             total_amount: 0,
             total_usd_value: 0,
+            usd_current_price: currentPrice,
             holdings: {}
           };
         }
