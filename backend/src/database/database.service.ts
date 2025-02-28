@@ -41,6 +41,14 @@ export class DatabaseService {
                 }
             }
 
+            // Delete existing rows for the current date before inserting new ones
+            await this.supabase
+                .from('portfolio_snapshots')
+                .delete()
+                .eq('date', snapshot.date);
+
+            console.log('Deleted existing rows for ' + snapshot.date)
+
             return await this.supabase
                 .from('portfolio_snapshots')
                 .insert(rows);

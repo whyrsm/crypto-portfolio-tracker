@@ -12,8 +12,8 @@ export class PortfolioController {
   ) {}
 
   @Get('snapshot')
-  async getPortfolioSnapshot(@Query('date') date?: string) {
-    return this.portfolioService.getPortfolioSnapshot(date);
+  async getPortfolioSnapshot(@Query('date') date?: string, @Query('refresh') refresh?: boolean) {
+    return this.portfolioService.getPortfolioSnapshot(date, refresh);
   }
 
   @Get('snapshot-fetch')

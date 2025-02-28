@@ -144,19 +144,21 @@ export class PortfolioService {
     }
   }
 
-  async getPortfolioSnapshot(date?: string) {
+  async getPortfolioSnapshot(date?: string, forceRefresh?: boolean) {
     try {
       // Check if today's snapshot exists in DB
       const currentDate = date ? date : this.databaseService.getCurrentDate();
       const latestSnapshotDate = await this.databaseService.getLatestSnapshotDate();
+      const refresh = forceRefresh ? true : false;
 
       console.log(latestSnapshotDate, currentDate)
 
       // If snapshot exists for today, return from DB
-      if (latestSnapshotDate === currentDate) {
+      if (latestSnapshotDate === currentDate && !refresh ) {
         console.log('Get data from database')
         const data = await this.databaseService.getSnapshot(date);
-        return this.formatSnapshot(data, currentDate);
+        const formattedData = await this.formatSnapshot(data, currentDate);
+        return { ...formattedData, source: 'database' };
       }
 
       console.log('Get data from API')
@@ -168,7 +170,8 @@ export class PortfolioService {
       const result = {
         date: currentDate,
         summary,
-        balances: snapshot
+        balances: snapshot,
+        source: 'api'
       };
 
       await this.databaseService.savePortfolioSnapshot(result);
