@@ -4,8 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Image from "next/image";
 import { useState } from "react";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 
 interface AssetHolding {
   amount: number;
@@ -46,9 +48,38 @@ const getAssetLogo = (symbol: string) => {
   return `/assets/logos/${normalizedSymbol}.svg`;
 };
 
-export default function PortfolioCard({ data }: PortfolioCardProps) {
+export default function PortfolioCard({ data: initialData }: PortfolioCardProps) {
+  const { toast } = useToast();
   const [expandedAssets, setExpandedAssets] = useState<{[key: string]: boolean}>({});
   const [hideSmallBalances, setHideSmallBalances] = useState(true);
+  const [data, setData] = useState(initialData);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    console.log("Refreshing data...")
+    try {
+      setIsRefreshing(true);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/portfolio/snapshot?refresh=true`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const newData = await response.json();
+      setData(newData);
+      toast({
+        title: "Portfolio Updated",
+        description: "Your portfolio data has been refreshed successfully."
+      });
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to refresh portfolio data. Please try again."
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const filteredAssets = Object.entries(data.summary.assets)
     .filter(([, assetData]) => !hideSmallBalances || assetData.total_usd_value >= 1)
@@ -58,9 +89,20 @@ export default function PortfolioCard({ data }: PortfolioCardProps) {
     <Card className="w-full max-w-lg md:max-w-2xl lg:max-w-4xl">
       <CardHeader className="p-4 md:p-6">
         <div className="flex flex-col">
-          <div>
-            <CardTitle className="text-xl md:text-2xl mb-1">Portfolio Summary</CardTitle>
-            <CardDescription>As of {new Date(data.date).toLocaleDateString()}</CardDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="text-xl md:text-2xl mb-1">Portfolio Summary</CardTitle>
+              <CardDescription>As of {new Date(data.date).toLocaleDateString()}</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`${isRefreshing ? 'animate-spin' : ''}`}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </div>
           <div className="mt-6 mb-2">
             <Badge variant="secondary" className="text-3xl md:text-4xl px-6 py-3 font-semibold">

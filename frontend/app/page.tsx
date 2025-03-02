@@ -1,10 +1,10 @@
 import PortfolioCard from "@/components/ui/portfolio-card";
 
 async function getPortfolioData() {
-  const res = await fetch('http://localhost:3000/portfolio/snapshot', {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/portfolio/snapshot`, {
     next: { revalidate: 300 } // Revalidate every 5 minutes
   });
-  
+
   if (!res.ok) {
     throw new Error('Failed to fetch portfolio data');
   }
