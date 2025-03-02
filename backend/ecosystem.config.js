@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    name: 'crypto-tracker-backend',
+    name: 'crypto-backend',
     script: 'dist/main.js',
     instances: 1,
     autorestart: true,
