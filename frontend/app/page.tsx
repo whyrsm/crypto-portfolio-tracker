@@ -1,4 +1,5 @@
 import PortfolioCard from "@/components/ui/portfolio-card";
+import PortfolioTrend from "../components/ui/PortfolioTrend";
 
 async function getPortfolioData() {
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/portfolio/snapshot`, {
@@ -31,8 +32,9 @@ export default async function Home() {
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-8 flex items-center justify-center">
+    <div className="min-h-screen p-4 sm:p-8 flex flex-col items-center space-y-8">
       <PortfolioCard data={sortedPortfolioData} />
+      <PortfolioTrend />
     </div>
   );
 }

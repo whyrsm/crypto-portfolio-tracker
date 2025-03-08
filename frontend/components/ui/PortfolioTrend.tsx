@@ -70,11 +70,11 @@ export default function PortfolioTrend() {
   }
 
   return (
-    <Card className="w-full max-w-4xl mx-auto">
-      <CardHeader>
+    <Card className="w-full max-w-lg md:max-w-2xl lg:max-w-4xl">
+      <CardHeader className="p-4 md:p-6">
         <CardTitle className="text-xl md:text-2xl mb-1">Portfolio Value Trend</CardTitle>
       </CardHeader>
-      <CardContent className="h-[500px]">
+      <CardContent className="p-4 md:p-6 pt-0 h-[500px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={trendData}

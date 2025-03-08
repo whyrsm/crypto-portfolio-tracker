@@ -1,4 +1,4 @@
-import PortfolioTrend from './components/PortfolioTrend';
+import PortfolioTrend from '../../components/ui/PortfolioTrend';
 
 export default function StatsPage() {
   return (
