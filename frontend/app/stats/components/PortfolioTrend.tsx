@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AssetHolding {
   amount: number;
@@ -50,66 +51,75 @@ export default function PortfolioTrend() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[400px] text-red-500">
-        {error}
-      </div>
+      <Card className="w-full max-w-4xl mx-auto">
+        <CardContent className="flex items-center justify-center min-h-[400px] text-red-500">
+          {error}
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="w-full h-[500px] bg-white rounded-lg shadow-lg p-3">
-      <h2 className="text-xl font-semibold mb-4">Portfolio Value Trend</h2>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart
-          data={trendData}
-          margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(date) => {
-              const d = new Date(date);
-              return `${d.getDate()}/${d.getMonth() + 1}`;
-            }}
-          />
-          <YAxis
-            tickFormatter={(value) => {
-              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
-              if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
-              return `$${value}`;
-            }}
-          />
-          <Tooltip
-            formatter={(value: number) => {
-              if (value >= 1000000) return [`$${(value / 1000000).toFixed(1)}M`, 'Portfolio Value'];
-              if (value >= 1000) return [`$${(value / 1000).toFixed(1)}K`, 'Portfolio Value'];
-              return [`$${value}`, 'Portfolio Value'];
-            }}
-            labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-          />
-          <Bar
-            dataKey="total_usd_value"
-            fill="#11111"
-            radius={[4, 4, 0, 0]}
-            label={{
-              position: 'top',
-              formatter: (value: number) => {
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-xl md:text-2xl mb-1">Portfolio Value Trend</CardTitle>
+      </CardHeader>
+      <CardContent className="h-[500px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={trendData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis
+              dataKey="date"
+              tickFormatter={(date) => {
+                const d = new Date(date);
+                return `${d.getDate()}/${d.getMonth() + 1}`;
+              }}
+            />
+            <YAxis
+              tickFormatter={(value) => {
                 if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
                 if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
                 return `$${value}`;
-              }
-            }}
-          />
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+              }}
+            />
+            <Tooltip
+              formatter={(value: number) => {
+                if (value >= 1000000) return [`$${(value / 1000000).toFixed(1)}M`, 'Portfolio Value'];
+                if (value >= 1000) return [`$${(value / 1000).toFixed(1)}K`, 'Portfolio Value'];
+                return [`$${value}`, 'Portfolio Value'];
+              }}
+              labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            />
+            <Bar
+              dataKey="total_usd_value"
+              fill="#111111"
+              radius={[4, 4, 0, 0]}
+              label={{
+                position: 'top',
+                fontSize: 11,
+                formatter: (value: number) => {
+                  if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                  if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+                  return `$${value}`;
+                }
+              }}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   );
 }
