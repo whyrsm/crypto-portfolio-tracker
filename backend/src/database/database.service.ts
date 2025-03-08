@@ -87,4 +87,64 @@ export class DatabaseService {
             throw new Error(`Failed to fetch snapshots: ${error.message}`);
         }
     }
+
+    async getPortfolioTrend(startDate?: string, endDate?: string) {
+        try {
+            if (!endDate) {
+                endDate = this.getCurrentDate();
+            }
+            if (!startDate) {
+                const date = new Date(endDate);
+                date.setDate(date.getDate() - 30); // Default to last 30 days
+                startDate = date.toISOString().split('T')[0];
+            }
+
+            const { data, error } = await this.supabase
+                .from('portfolio_snapshots')
+                .select('date, asset_name, exchange_name, amount, usd_value')
+                .gte('date', startDate)
+                .lte('date', endDate)
+                .order('date', { ascending: true });
+
+            if (error) throw error;
+
+            // Group by date to calculate total portfolio value
+            const portfolioTrend = data.reduce((acc, record) => {
+                const date = record.date;
+                if (!acc[date]) {
+                    acc[date] = {
+                        date,
+                        total_usd_value: 0,
+                        assets: {}
+                    };
+                }
+
+                // Add to total portfolio value
+                acc[date].total_usd_value += record.usd_value;
+
+                // Track individual asset values
+                if (!acc[date].assets[record.asset_name]) {
+                    acc[date].assets[record.asset_name] = {
+                        total_amount: 0,
+                        total_usd_value: 0,
+                        holdings: {}
+                    };
+                }
+
+                const asset = acc[date].assets[record.asset_name];
+                asset.total_amount += record.amount;
+                asset.total_usd_value += record.usd_value;
+                asset.holdings[record.exchange_name] = {
+                    amount: record.amount,
+                    usd_value: record.usd_value
+                };
+
+                return acc;
+            }, {});
+
+            return Object.values(portfolioTrend);
+        } catch (error) {
+            throw new Error(`Failed to fetch portfolio trend: ${error.message}`);
+        }
+    }
 }

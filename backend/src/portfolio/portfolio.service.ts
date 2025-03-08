@@ -144,6 +144,10 @@ export class PortfolioService {
     }
   }
 
+  async getPortfolioTrend(startDate?: string, endDate?: string) {
+    return this.databaseService.getPortfolioTrend(startDate, endDate);
+  }
+
   async getPortfolioSnapshot(date?: string, forceRefresh?: boolean) {
     try {
       // Check if today's snapshot exists in DB
