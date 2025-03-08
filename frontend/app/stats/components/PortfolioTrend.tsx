@@ -75,19 +75,38 @@ export default function PortfolioTrend() {
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
             dataKey="date"
-            tickFormatter={(date) => new Date(date).toLocaleDateString()}
+            tickFormatter={(date) => {
+              const d = new Date(date);
+              return `${d.getDate()}/${d.getMonth() + 1}`;
+            }}
           />
           <YAxis
-            tickFormatter={(value) => `$${value.toLocaleString()}`}
+            tickFormatter={(value) => {
+              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+              if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+              return `$${value}`;
+            }}
           />
           <Tooltip
-            formatter={(value: number) => [`$${value.toLocaleString()}`, 'Portfolio Value']}
-            labelFormatter={(date) => new Date(date).toLocaleDateString()}
+            formatter={(value: number) => {
+              if (value >= 1000000) return [`$${(value / 1000000).toFixed(1)}M`, 'Portfolio Value'];
+              if (value >= 1000) return [`$${(value / 1000).toFixed(1)}K`, 'Portfolio Value'];
+              return [`$${value}`, 'Portfolio Value'];
+            }}
+            labelFormatter={(date) => new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
           />
           <Bar
             dataKey="total_usd_value"
-            fill="#2563eb"
+            fill="#11111"
             radius={[4, 4, 0, 0]}
+            label={{
+              position: 'top',
+              formatter: (value: number) => {
+                if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
+                if (value >= 1000) return `$${(value / 1000).toFixed(1)}K`;
+                return `$${value}`;
+              }
+            }}
           />
         </BarChart>
       </ResponsiveContainer>
