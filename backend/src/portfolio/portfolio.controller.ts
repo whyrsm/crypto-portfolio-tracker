@@ -1,5 +1,6 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { PortfolioService } from './portfolio.service';
+import { TransactionHistory } from './interfaces/transaction.interface';
 
 @Controller('portfolio')
 export class PortfolioController {
@@ -19,5 +20,13 @@ export class PortfolioController {
     @Query('forceRefresh') forceRefresh?: boolean,
   ) {
     return this.portfolioService.getPortfolioSnapshot(date, forceRefresh);
+  }
+
+  @Get('transactions')
+  async getTransactionHistory(
+    @Query('startTime') startTime?: number,
+    @Query('endTime') endTime?: number,
+  ): Promise<TransactionHistory> {
+    return this.portfolioService.getTransactionHistory(startTime, endTime);
   }
 }

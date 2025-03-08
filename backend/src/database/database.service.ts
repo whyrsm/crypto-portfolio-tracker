@@ -88,6 +88,30 @@ export class DatabaseService {
         }
     }
 
+    async getUniqueAssetSymbols(exchange?: string): Promise<string[]> {
+        try {
+            let query = this.supabase
+                .from('portfolio_snapshots')
+                .select('asset_name')
+                .order('asset_name')
+                .limit(1000);
+
+            if (exchange) {
+                query = query.eq('exchange_name', exchange);
+            }
+
+            const { data, error } = await query;
+    
+            if (error) throw error;
+    
+            // Get unique asset names
+            const uniqueAssets = [...new Set(data.map(row => row.asset_name))];
+            return uniqueAssets;
+        } catch (error) {
+            throw new Error(`Failed to fetch unique asset symbols: ${error.message}`);
+        }
+    }
+
     async getPortfolioTrend(startDate?: string, endDate?: string) {
         try {
             if (!endDate) {
