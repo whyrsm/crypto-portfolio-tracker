@@ -402,14 +402,15 @@ export class PortfolioService {
       const latestSnapshotDate = await this.databaseService.getLatestSnapshotDate();
       const refresh = forceRefresh ? true : false;
 
-      console.log(latestSnapshotDate, currentDate)
+      const latestDate = latestSnapshotDate ? new Date(latestSnapshotDate).toISOString().split('T')[0] : null;
+      const lastUpdate = latestSnapshotDate ? new Date(new Date(latestSnapshotDate).getTime() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ') : null;
 
       // If snapshot exists for today, return from DB
-      if (latestSnapshotDate === currentDate && !refresh ) {
+      if (latestDate === currentDate && !refresh ) {
         console.log('Get data from database')
         const data = await this.databaseService.getSnapshot(date);
         const formattedData = await this.formatSnapshot(data, currentDate);
-        return { ...formattedData, source: 'database' };
+        return { ...formattedData, source: 'database', last_update: lastUpdate };
       }
 
       console.log('Get data from API')
@@ -422,7 +423,8 @@ export class PortfolioService {
         date: currentDate,
         summary,
         balances: snapshot,
-        source: 'api'
+        source: 'api',
+        last_update: new Date(new Date().getTime() + (7 * 60 * 60 * 1000)).toISOString().slice(0, 19).replace('T', ' ')
       };
 
       await this.databaseService.savePortfolioSnapshot(result);

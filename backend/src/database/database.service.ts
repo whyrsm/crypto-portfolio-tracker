@@ -61,11 +61,11 @@ export class DatabaseService {
     async getLatestSnapshotDate() {
         const { data: latestSnapshot } = await this.supabase
          .from('portfolio_snapshots')
-         .select('date')
+         .select('created_at')
          .order('date', { ascending: false })
          .limit(1)
          .single();
-        return latestSnapshot?.date;
+        return latestSnapshot?.created_at;
     }
 
     async getSnapshot(date?: string) {

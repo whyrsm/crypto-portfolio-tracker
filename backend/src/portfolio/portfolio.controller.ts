@@ -36,9 +36,11 @@ export class PortfolioController {
     // Add header row with filtered asset names
     chartData.push(['Date', ...assetNames]);
 
-    // Add data rows
+    // Add data rows with simplified date format (DD/MM)
     trendData.forEach(point => {
-      const row = [(point as { date: string }).date];
+      const date = new Date((point as { date: string }).date);
+      const formattedDate = `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}`;
+      const row = [formattedDate];
       assetNames.forEach(asset => {
         const value = (point as { assets: Record<string, { total_usd_value?: number }> }).assets[asset]?.total_usd_value || 0;
         row.push(Math.round(value).toString());
